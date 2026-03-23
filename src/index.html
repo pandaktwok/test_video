@@ -453,8 +453,9 @@
                 // Simulação de delay de rede
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
-                // CONFIGURAÇÃO: Substitua '#' pela URL do seu Webhook do n8n
-                const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook-test/generate-viral-script';
+                // URL dinâmica: usa o mesmo host/IP que está servindo a página
+                const n8nHost = window.location.hostname;
+                const N8N_WEBHOOK_URL = `http://${n8nHost}:5678/webhook-test/generate-viral-script`;
 
                 console.log('Enviando dados para n8n:', data);
 
