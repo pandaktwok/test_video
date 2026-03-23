@@ -446,8 +446,16 @@
             loader.style.display = 'block';
 
             const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-            data.timestamp_sent = new Date().toISOString();
+            const raw = Object.fromEntries(formData.entries());
+
+            // Mapeia os campos do formulário para os nomes esperados pelo n8n
+            const data = {
+                topic: raw.tema,
+                category: raw.categoria,
+                mood: raw.tom,
+                camera_style: raw.camera,
+                timestamp_sent: new Date().toISOString()
+            };
 
             try {
                 // Simulação de delay de rede
