@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Marker | Assistente de Marcação Inteligente</title>
+    <!-- Google Fonts: Outfi & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --bg: #0f172a;
+            --surface: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Container Principal */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            z-index: 10;
+        }
+
+        .app-container::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent, rgba(99, 102, 241, 0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cabeçalho */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        p.subtitle {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Formulário */
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            /* Força alinhamento à esquerda */
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+            margin-left: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: left;
+            /* Adicional para segurança */
+        }
+
+        label .material-icons {
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Container para select customizado */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select select {
+            appearance: none;
+            /* Remove a seta padrão */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 3rem;
+            /* Espaço para a seta customizada */
+        }
+
+        .select-arrow {
+            position: absolute;
+            right: 1.25rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            /* Garante que o clique passe para o select */
+            color: var(--text-dim);
+            transition: all 0.3s ease;
+        }
+
+        .custom-select:focus-within .select-arrow {
+            color: var(--primary);
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        /* Estilização para as opções do dropdown */
+        select option {
+            background-color: #1e293b;
+            /* Tom escuro sólido similar ao do container */
+            color: var(--text-main);
+            padding: 10px;
+        }
+
+        /* Info Box para categorias */
+        .categoria-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--primary);
+            border-radius: 0 12px 12px 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-dim);
+            transition: opacity 0.3s ease;
+        }
+
+        .categoria-info strong {
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .categoria-info em {
+            color: var(--primary);
+            font-style: normal;
+            font-weight: 600;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        textarea {
+            resize: none;
+            height: 120px;
+        }
+
+        /* Botão */
+        .submit-btn {
+            width: 100%;
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 1.25rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Loader */
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Success Message */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10b981;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 99px;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Micro-interações */
+        .input-focus-line {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .app-container {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>Video Marker</h1>
+            <p class="subtitle">Insira os metadados para indexar o momento no fluxo do n8n.</p>
+        </header>
+
+        <form id="markerForm">
+            <div class="form-group">
+                <label for="tema">
+                    <span class="material-icons">edit</span> Tema
+                </label>
+                <input type="text" id="tema" name="tema" placeholder="Ex: Carro, festa, cidade..." required>
+            </div>
+
+            <div class="form-group">
+                <label for="categoria">
+                    <span class="material-icons">category</span> Categoria
+                </label>
+                <div class="custom-select">
+                    <select id="categoria" name="categoria">
+                        <option value="animação-3d">Animação 3D</option>
+                        <option value="animação-2d">Animação 2D</option>
+                        <option value="motion-graphics">Motion Graphics</option>
+                        <option value="stop-motion">Stop Motion</option>
+                        <option value="live-action">Live Action</option>
+                        <option value="hiper-realismo-3d">Hiper-realismo 3D</option>
+                    </select>
+                    <span class="material-icons select-arrow">expand_more</span>
+                </div>
+                <div id="categoriaDesc" class="categoria-info">
+                    <strong>Animação 3D:</strong> É a criação de imagens em movimento em um ambiente digital
+                    tridimensional. Diferente do 2D, aqui os objetos e personagens têm volume e podem ser visualizados
+                    de qualquer ângulo.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="tom">
+                    <span class="material-icons">palette</span> Tom (Mood)
+                </label>
+                <div class="custom-select">
+                    <select id="tom" name="tom">
+                        <option value="falha">Falha (Fail)</option>
+                        <option value="acidentes">Acidentes</option>
+                        <option value="incrivel">Incrível (Awesome)</option>
+                        <option value="engracado">Engraçado</option>
+                        <option value="triste">Triste</option>
+                    </select>
+                    <span class="material-icons select-arrow">expand_more</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="camera">
+                    <span class="material-icons">videocam</span> Estilo de Câmera
+                </label>
+                <div class="custom-select">
+                    <select id="camera" name="camera">
+                        <option value="cctv">CCTV/Segurança</option>
+                        <option value="pov">POV (Ponto de Vista)</option>
+                        <option value="cinematografico">Cinematográfico</option>
+                    </select>
+                    <span class="material-icons select-arrow">expand_more</span>
+                </div>
+            </div>
+
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span class="btn-text">Marcar Momento</span>
+                <span class="material-icons">send</span>
+                <div class="loader" id="loader"></div>
+            </button>
+        </form>
+    </div>
+
+    <div id="toast" class="toast">✓ Sucesso! Enviado para n8n</div>
+
+    <script>
+        const form = document.getElementById('markerForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const btnText = document.querySelector('.btn-text');
+        const toast = document.getElementById('toast');
+        const categoriaSelect = document.getElementById('categoria');
+        const categoriaDesc = document.getElementById('categoriaDesc');
+
+        const descricoes = {
+            'animação-3d': '<strong>Animação 3D:</strong> É a criação de imagens em movimento em um ambiente digital tridimensional. Diferente do 2D, aqui os objetos e personagens têm volume (altura, largura e profundidade) e podem ser visualizados de qualquer ângulo.<br><br><em>Como funciona:</em> Envolve a criação de modelos digitais ("bonecos"), aplicação de texturas e um esqueleto virtual (rigging).<br><em>Uso comum:</em> Filmes da Pixar/DreamWorks, efeitos visuais (VFX) e jogos modernos.',
+
+            'animação-2d': '<strong>Animação 2D:</strong> Refere-se a imagens bidimensionais criadas em um plano artístico plano. Pode ser feita de forma tradicional (desenho à mão) ou digital (vetores).<br><br><em>Como funciona:</em> O movimento é simulado pela rápida sucessão de desenhos. Softwares modernos permitem animar "marionetes" 2D sem redesenhar tudo.<br><em>Uso comum:</em> Desenhos animados clássicos, animes e vídeos explicativos.',
+
+            'motion-graphics': '<strong>Motion Graphics:</strong> É o design gráfico em movimento. O foco costuma ser na animação de formas geométricas, logotipos e textos, em vez de personagens complexos.<br><br><em>Como funciona:</em> Utiliza princípios de design para dar vida a elementos estáticos, focando em fluidez e comunicação visual direta.<br><em>Uso comum:</em> Vinhetas de canais, vídeos corporativos e infográficos animados.',
+
+            'stop-motion': '<strong>Stop Motion:</strong> Uma técnica de animação física onde objetos reais são fotografados quadro a quadro. Entre cada foto, o objeto é movido minimamente.<br><br><em>Como funciona:</em> Ao reproduzir as fotos em sequência, cria-se a ilusão de movimento (claymation, bonecos ou objetos cotidianos).<br><em>Uso comum:</em> Filmes como "O Estranho Mundo de Jack" ou "A Fuga das Galinhas".',
+
+            'live-action': '<strong>Live Action:</strong> É o formato de vídeo mais comum: a filmagem do mundo real. Envolve câmeras capturando atores e cenários físicos em tempo real.<br><br><em>Como funciona:</em> Baseia-se na captura de luz através de lentes cinematográficas, registrando a performance humana e o ambiente.<br><em>Uso comum:</em> Filmes convencionais, novelas, documentários e vlogs.',
+
+            'hiper-realismo-3d': '<strong>Hiper-realismo 3D:</strong> Uma subcategoria avançada do 3D que busca atingir um nível de detalhe tão alto que se torna quase impossível distinguir da realidade.<br><br><em>Como funciona:</em> Utiliza técnicas complexas de renderização, simulação de luz (Ray Tracing) e texturas que imitam poros da pele e imperfeições.<br><em>Uso comum:</em> Publicidade de luxo (carros, joias) e cinemáticas de jogos de última geração.'
+        };
+
+        categoriaSelect.addEventListener('change', () => {
+            const val = categoriaSelect.value;
+            categoriaDesc.style.opacity = '0';
+            setTimeout(() => {
+                categoriaDesc.innerHTML = descricoes[val];
+                categoriaDesc.style.opacity = '1';
+            }, 200);
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Estado de carregamento
+            submitBtn.disabled = true;
+            btnText.style.opacity = '0.5';
+            loader.style.display = 'block';
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            data.timestamp_sent = new Date().toISOString();
+
+            try {
+                // Simulação de delay de rede
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // CONFIGURAÇÃO: Substitua '#' pela URL do seu Webhook do n8n
+                const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook-test/generate-viral-script';
+
+                console.log('Enviando dados para n8n:', data);
+
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro no servidor: ${response.status}`);
+                }
+
+                // Simular sucesso
+                showToast();
+                form.reset();
+            } catch (error) {
+                console.error('Erro ao enviar:', error);
+                alert('Ocorreu um erro ao conectar com o n8n.');
+            } finally {
+                submitBtn.disabled = false;
+                btnText.style.opacity = '1';
+                loader.style.display = 'none';
+            }
+        });
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>

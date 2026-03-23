@@ -1,0 +1,15 @@
+services:
+  video-marker:
+    build:
+      context: .
+      dockerfile: infra/Dockerfile
+    container_name: test-video-marker
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - video-net
+
+networks:
+  video-net:
+    driver: bridge
